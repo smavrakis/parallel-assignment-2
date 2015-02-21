@@ -3,6 +3,14 @@
 #include <time.h>
 #define NUM_ELEMENTS 10
 
+void xorSwap (int *x, int *y) {
+     if (x != y) {
+         *x ^= *y;
+         *y ^= *x;
+         *x ^= *y;
+     }
+ }
+
 int partition(double a[], int left, int right){
 
 	int i, j;
@@ -23,6 +31,8 @@ int partition(double a[], int left, int right){
 	   	a[j] = temp;
 	}
 
+	//Mporeis na dokimaseis na xrhsimopoihseis
+	//thn xorSwap poy evala :P malakizomai
 	temp = a[left];
 	a[left] = a[j];
 	a[j] = temp;
