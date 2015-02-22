@@ -52,33 +52,55 @@ void quicksort(double a[], int left, int right){
 
 }
 
+int isSorted(double a[], int size)
+{
+	int i;
+	for (i = 1;i < size;i ++){
+		if (a[i] < a[i-1]){
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main(int argc, char *argv[]) {
 
-	int i;
+	int i,num_elem;
 	double *A;
+	clock_t start_time,end_time;
 
-	A = malloc(NUM_ELEMENTS * sizeof(double));
-	srand((unsigned int)time(NULL));
-	// Variemai na psaksw na kanw tin drand48/srand48 na doulepsei sta windows
-	//srand48((unsigned int)time(NULL));
+	num_elem = NUM_ELEMENTS;
 
-	double scaleLimit = 100.0;
-	double divisor = (double)RAND_MAX/scaleLimit;
-
-	printf("\n\nUnsorted: ");
-	for (i=0;i<NUM_ELEMENTS;i++){
-		A[i] = rand()/divisor;
-		// Variemai na psaksw na kanw tin drand48/srand48 na doulepsei sta windows
-		//A[i] = drand48() * 100;
-		printf(" %f ",A[i]);
+	if (argc == 2){
+		// Argument is the size of the list
+		num_elem = atoi(argv[1]);
 	}
 
-	quicksort(A,0,NUM_ELEMENTS-1);
+	A = malloc(num_elem * sizeof(double));
+	srand48((unsigned int)time(NULL));
 
-	printf("\n\nSorted: ");
+	//printf("\n\nUnsorted: ");
+	for (i=0;i<num_elem;i++){
+		A[i] = drand48() * 100;
+		//printf(" %f ",A[i]);
+	}
+
+	start_time = clock();
+	quicksort(A,0,num_elem-1);
+	end_time = clock();
+
+	/*printf("\n\nSorted: ");
 	for (i=0;i<NUM_ELEMENTS;i++){
 			printf(" %f ",A[i]);
-		}
+	}*/
+
+	if (!isSorted(A, num_elem)){
+		printf("\nList did not get sorted dummy!\n");
+	}else{
+		printf("\nEverything went great, the list is sorted, you're a genius!\n");
+	}
+
+	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
 
 	return 0;
 }
