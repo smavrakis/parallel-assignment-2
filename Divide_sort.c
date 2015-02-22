@@ -143,12 +143,18 @@ int main(int argc, char *argv[]) {
 		// First argument is the size of the list, second is the number of threads
 		num_elem = atoi(argv[1]);
 		num_thr = atoi(argv[2]);
+	}else {
+	printf("wrong number of Arguments. Aborting");
+   exit(0);
+
 	}
+	
+	
 
 	A = malloc(num_elem * sizeof(double));
 	srand48((unsigned int)time(NULL));
 
-	//printf("\n\nUnsorted: ");
+	//printf("\n\nUnsorted:);
 	for (i=0;i<num_elem;i++){
 		A[i] = drand48() * 100;
 		//printf(" %f ",A[i]);
@@ -166,7 +172,7 @@ int main(int argc, char *argv[]) {
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
 	}else{
-		printf("\nEverything went great, the list is sorted, you're a genius!\n");
+		printf("\nEverything went great, the list is sorted!\n");
 	}
 
 	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
