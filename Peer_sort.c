@@ -3,7 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define NUM_ELEMENTS 10
+#define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
 
 pthread_mutex_t mutex;
@@ -128,22 +128,22 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Print the unsorted array (for test purpose)
-	printf("\n\nSorted: \n");
+	/*printf("\n\nSorted: \n");
 	for (i=0;i<NUM_ELEMENTS;i++){
 			printf(" %f ",A[i]);
 		}
-	printf("\n");
+	printf("\n");*/
 
 	start_time = clock();
 	pquicksort(A,num_elem,num_thr);
 	end_time = clock();
 
  	// Print the sorted array (for test purpose)
-	printf("\n\nSorted: \n");
+	/*printf("\n\nSorted: \n");
 	for (i=0;i<NUM_ELEMENTS;i++){
 			printf(" %f ",A[i]);
 		}
-	printf("\n");
+	printf("\n");*/
 
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
