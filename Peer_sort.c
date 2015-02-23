@@ -6,12 +6,14 @@
 #define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
 
-pthread_mutex_t mutex;
+pthread_barrier_t barrier1;
+int num_thr,chunk;
 
 struct thread_data{
 	double *A;
 	int left;
 	int right;
+	int id;
 };
 
 int partition(double a[], int left, int right){
@@ -55,32 +57,52 @@ void quicksort(double a[], int left, int right){
 
 void *helpQuicksort(void *arg){
 
-	int pivot;
+	int pivot,i,j;
 	struct thread_data *mydata;
 	mydata = (struct thread_data *) arg;
-	// printf("%d\n", mydata-);
+
+
 	quicksort(mydata->A,mydata->left,mydata->right);
+
+	// Wait for every thread to sort its chunk
+	pthread_barrier_wait (&barrier1);
+
+	// num_thr steps, introducing odd and even phases
+	for (i=0; i<num_thr; i++){
+		// Even phase
+		if (i % 2 == 0){
+			// Get every thread with odd id to merge their chunk with their left neighbor's chunk and sort them
+			if (mydata->id % 2 != 0){
+				quicksort(mydata->A,mydata->left - chunk,mydata->right);
+			}
+		}else{ // Odd phase
+			/* Get every thread with odd id to merge their chunk with their right neighbor's chunk and sort them.
+			 * The last thread with odd id does nothing because it doesn't have a right neighbor*/
+			if ((mydata->id % 2 != 0) && (num_thr - mydata->id != 1)){
+				quicksort(mydata->A,mydata->left,mydata->right + chunk);
+			}
+		}
+		pthread_barrier_wait (&barrier1);
+	}
 }
 
-void pquicksort(double a[], int size, int num_thr){
+void pquicksort(double a[]){
 
 	void *status;
 	pthread_t threads[num_thr];
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	//pthread_mutex_init(&mutex, NULL);
+	pthread_barrier_init (&barrier1, NULL, num_thr);
 	int t;
 	struct thread_data mydata[num_thr];
-
-	//Size of elements for each thread
-	int chunk = size/num_thr;
 
 	//Set left and right for all threads
 	for (t=0; t<num_thr; t++){
 		mydata[t].A = a;
 		mydata[t].left = t*chunk;
 		mydata[t].right = (t+1)*chunk - 1;
+		mydata[t].id = t;
       	pthread_create(&threads[t], &attr, helpQuicksort, (void *)&mydata[t]);
    	}
 
@@ -105,7 +127,7 @@ int isSorted(double a[], int size)
 
 int main(int argc, char *argv[]) {
 
-	int i,num_elem,num_thr;
+	int i,num_elem;
 	double *A;
 	clock_t start_time,end_time;
 
@@ -120,6 +142,9 @@ int main(int argc, char *argv[]) {
 		printf("\nNo arguments given, continuing with default values: NUM_ELEMENTS 10000 NUM_THREADS 4\n");
 	}
 
+	//Size of elements for each thread
+	chunk = num_elem/num_thr;
+
 	A = malloc(num_elem * sizeof(double));
 	srand48((unsigned int)time(NULL));
 
@@ -127,23 +152,9 @@ int main(int argc, char *argv[]) {
 		A[i] = drand48() * 100;
 	}
 
-	// Print the unsorted array (for test purpose)
-	/*printf("\n\nSorted: \n");
-	for (i=0;i<NUM_ELEMENTS;i++){
-			printf(" %f ",A[i]);
-		}
-	printf("\n");*/
-
 	start_time = clock();
-	pquicksort(A,num_elem,num_thr);
+	pquicksort(A);
 	end_time = clock();
-
- 	// Print the sorted array (for test purpose)
-	/*printf("\n\nSorted: \n");
-	for (i=0;i<NUM_ELEMENTS;i++){
-			printf(" %f ",A[i]);
-		}
-	printf("\n");*/
 
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
@@ -154,6 +165,5 @@ int main(int argc, char *argv[]) {
 	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
 
 	free(A);
-	//pthread_mutex_destroy (&mutex);
 	pthread_exit(NULL);
 }
