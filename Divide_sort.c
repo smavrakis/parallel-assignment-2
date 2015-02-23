@@ -3,14 +3,17 @@
 #include <time.h>
 #include <pthread.h>
 
-#define NUM_ELEMENTS 1000
+#define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
+
+int num_thr;
+pthread_mutex_t mutex;
 
 struct thread_data{
 	double *A;
 	int left;
 	int right;
-	int num_thr;
+	//int num_thr;
 };
 
 int partition(double a[], int left, int right){
@@ -59,7 +62,7 @@ void *pquicksortHelp(void *threadarg){
 	struct thread_data *mydata;
 	mydata = (struct thread_data *) threadarg;
 
-	if (mydata->num_thr <= 0 || mydata->left == mydata->right){
+	if (num_thr <= 0 || mydata->left == mydata->right){
 		// Max number of threads reached, continue with serial quicksort
 		quicksort(mydata->A, mydata->left, mydata->right);
 		pthread_exit(NULL);
@@ -75,7 +78,10 @@ void *pquicksortHelp(void *threadarg){
 	struct thread_data thread_data_array[2];
 	for (i = 0;i < 2;i ++){
 		thread_data_array[i].A = mydata->A;
-		thread_data_array[i].num_thr = mydata->num_thr - 1;
+		pthread_mutex_lock (&mutex);
+		num_thr--;
+		pthread_mutex_unlock (&mutex);
+		//thread_data_array[i].num_thr = mydata->num_thr - 1;
 	}
 	thread_data_array[0].left = mydata->left;
 	thread_data_array[0].right = pivot-1;
@@ -103,12 +109,13 @@ void pquicksort(double a[], int size, int num_thr){
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	pthread_mutex_init(&mutex, NULL);
 
 	struct thread_data mydata;
 	mydata.A = a;
 	mydata.left = 0;
 	mydata.right = size - 1;
-	mydata.num_thr = num_thr;
+	//mydata.num_thr = num_thr;
 
 	pthread_t thread1;
 	pthread_create(&thread1, &attr, pquicksortHelp, (void *) &mydata);
@@ -123,6 +130,7 @@ int isSorted(double a[], int size)
 	int i;
 	for (i = 1;i < size;i ++){
 		if (a[i] < a[i-1]){
+			printf("at loc %d, %e < %e \n", i, a[i], a[i-1]);
 			return 0;
 		}
 	}
@@ -132,7 +140,7 @@ int isSorted(double a[], int size)
 
 int main(int argc, char *argv[]) {
 
-	int i,num_elem,num_thr;
+	int i,num_elem;
 	double *A;
 	clock_t start_time,end_time;
 
@@ -143,10 +151,8 @@ int main(int argc, char *argv[]) {
 		// First argument is the size of the list, second is the number of threads
 		num_elem = atoi(argv[1]);
 		num_thr = atoi(argv[2]);
-	}else {
-	printf("wrong number of Arguments. Aborting");
-   exit(0);
-
+	}else{
+		printf("\nNo arguments given, continuing with default values: NUM_ELEMENTS 10000 NUM_THREADS 4\n");
 	}
 	
 	
@@ -178,5 +184,6 @@ int main(int argc, char *argv[]) {
 	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
 
 	free(A);
+	pthread_mutex_destroy (&mutex);
 	pthread_exit(NULL);
 }
