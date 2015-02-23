@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #include <pthread.h>
 
 #define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
 
 pthread_mutex_t mutex;
+int chunk;
 
 struct thread_data{
-	double *A;
+	double *A,median;
 	int left;
 	int right;
 };
@@ -56,15 +58,18 @@ void quicksort(double a[], int left, int right){
 void *helpQuicksort(void *arg){
 
 	int pivot;
+	double item;
 	struct thread_data *mydata;
 	mydata = (struct thread_data *) arg;
-	// printf("%d\n", mydata-);
 	quicksort(mydata->A,mydata->left,mydata->right);
+	item = (chunk + 1) / 2;
+	mydata->median = ((mydata->A[(int)floor(item)]) + (mydata->A[(int)ceil(item)])) / 2;
 }
 
 void pquicksort(double a[], int size, int num_thr){
 
 	void *status;
+	double pvt,*medians,item,sum = 0.0;
 	pthread_t threads[num_thr];
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
@@ -74,7 +79,7 @@ void pquicksort(double a[], int size, int num_thr){
 	struct thread_data mydata[num_thr];
 
 	//Size of elements for each thread
-	int chunk = size/num_thr;
+	chunk = size/num_thr;
 
 	//Set left and right for all threads
 	for (t=0; t<num_thr; t++){
@@ -84,9 +89,20 @@ void pquicksort(double a[], int size, int num_thr){
       	pthread_create(&threads[t], &attr, helpQuicksort, (void *)&mydata[t]);
    	}
 
+	medians = malloc(num_thr * sizeof(double));
+
    	for (t=0; t<num_thr; t++){
       pthread_join(threads[t], &status);
+      medians[t] = mydata[t].median;
+      sum += mydata[t].median;
    	}
+
+   	// Strategy 3: pivot is the median of all medians
+   	/*item = (num_thr + 1) / 2;
+   	pvt = ((medians[(int)floor(item)]) + (medians[(int)ceil(item)])) / 2;*/
+
+   	// Strategy 2: pivot is the mean value of all medians
+   	pvt = sum / num_thr;
 
 	pthread_attr_destroy(&attr);
 }
