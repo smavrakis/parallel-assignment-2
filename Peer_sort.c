@@ -3,7 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define NUM_ELEMENTS 10000
+#define NUM_ELEMENTS 10
 #define NUM_THREADS 4
 
 pthread_mutex_t mutex;
