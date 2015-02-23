@@ -13,7 +13,6 @@ struct thread_data{
 	double *A;
 	int left;
 	int right;
-	//int num_thr;
 };
 
 int partition(double a[], int left, int right){
@@ -81,7 +80,6 @@ void *pquicksortHelp(void *threadarg){
 		pthread_mutex_lock (&mutex);
 		num_thr--;
 		pthread_mutex_unlock (&mutex);
-		//thread_data_array[i].num_thr = mydata->num_thr - 1;
 	}
 	thread_data_array[0].left = mydata->left;
 	thread_data_array[0].right = pivot-1;
@@ -103,7 +101,7 @@ void *pquicksortHelp(void *threadarg){
 
 }
 
-void pquicksort(double a[], int size, int num_thr){
+void pquicksort(double a[], int size){
 
 	void *status;
 	pthread_attr_t attr;
@@ -115,7 +113,6 @@ void pquicksort(double a[], int size, int num_thr){
 	mydata.A = a;
 	mydata.left = 0;
 	mydata.right = size - 1;
-	//mydata.num_thr = num_thr;
 
 	pthread_t thread1;
 	pthread_create(&thread1, &attr, pquicksortHelp, (void *) &mydata);
@@ -154,26 +151,17 @@ int main(int argc, char *argv[]) {
 	}else{
 		printf("\nNo arguments given, continuing with default values: NUM_ELEMENTS 10000 NUM_THREADS 4\n");
 	}
-	
-	
 
 	A = malloc(num_elem * sizeof(double));
 	srand48((unsigned int)time(NULL));
 
-	//printf("\n\nUnsorted:);
 	for (i=0;i<num_elem;i++){
 		A[i] = drand48() * 100;
-		//printf(" %f ",A[i]);
 	}
 
 	start_time = clock();
-	pquicksort(A,num_elem,num_thr);
+	pquicksort(A,num_elem);
 	end_time = clock();
-
-	/*printf("\n\nSorted: ");
-	for (i=0;i<num_elem;i++){
-			printf(" %f ",A[i]);
-		}*/
 
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
