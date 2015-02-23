@@ -3,15 +3,15 @@
 #include <time.h>
 #include <pthread.h>
 
-#define NUM_ELEMENTS 20
+#define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
 
 pthread_mutex_t mutex;
+
 struct thread_data{
 	double *A;
 	int left;
 	int right;
-	//int num_thr;
 };
 
 int partition(double a[], int left, int right){
@@ -40,41 +40,11 @@ int partition(double a[], int left, int right){
 
 	return j;
 }
-void *helpQuicksort(void *arg);
-void quicksort(double a[], int left, int right);
-void pquicksort(double a[], int size, int num_thr){
-
-	void *status;
-	pthread_t threads[NUM_THREADS];
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	pthread_mutex_init(&mutex, NULL);
-	int t;
-	struct thread_data mydata[NUM_THREADS];
-	
-	//Size of elements for each thread
-	int chunk = size/num_thr;	
-
-	//Set left and right for all threads
-	for (t=0; t<NUM_THREADS; t++){
-		mydata[t].A = a;
-		mydata[t].left = t*chunk;
-		mydata[t].right = (t+1)*chunk - 1;
-      	pthread_create(&threads[t], &attr, helpQuicksort, (void *)&mydata[t]);
-   	}
-
-   	for (t=0; t<NUM_THREADS; t++){
-      pthread_join(threads[t], &status);
-   	}
-
-	pthread_attr_destroy(&attr);	
-}
 
 void quicksort(double a[], int left, int right){
 
 	int pivot;
-	
+
 	if( left < right ){
 		pivot = partition( a, left, right);
 		quicksort( a, left, pivot-1);
@@ -92,33 +62,84 @@ void *helpQuicksort(void *arg){
 	quicksort(mydata->A,mydata->left,mydata->right);
 }
 
+void pquicksort(double a[], int size, int num_thr){
+
+	void *status;
+	pthread_t threads[num_thr];
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	//pthread_mutex_init(&mutex, NULL);
+	int t;
+	struct thread_data mydata[num_thr];
+
+	//Size of elements for each thread
+	int chunk = size/num_thr;
+
+	//Set left and right for all threads
+	for (t=0; t<num_thr; t++){
+		mydata[t].A = a;
+		mydata[t].left = t*chunk;
+		mydata[t].right = (t+1)*chunk - 1;
+      	pthread_create(&threads[t], &attr, helpQuicksort, (void *)&mydata[t]);
+   	}
+
+   	for (t=0; t<num_thr; t++){
+      pthread_join(threads[t], &status);
+   	}
+
+	pthread_attr_destroy(&attr);
+}
+
+int isSorted(double a[], int size)
+{
+	int i;
+	for (i = 1;i < size;i ++){
+		if (a[i] < a[i-1]){
+			printf("at loc %d, %e < %e \n", i, a[i], a[i-1]);
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main(int argc, char *argv[]) {
 
-	int i;
+	int i,num_elem,num_thr;
 	double *A;
+	clock_t start_time,end_time;
 
-	A = malloc(NUM_ELEMENTS * sizeof(double));
-	srand((unsigned int)time(NULL));
-	// Variemai na psaksw na kanw tin drand48/srand48 na doulepsei sta windows
-	//srand48((unsigned int)time(NULL));
+	num_elem = NUM_ELEMENTS;
+	num_thr = NUM_THREADS;
 
-	double scaleLimit = 100.0;
-	double divisor = (double)RAND_MAX/scaleLimit;
-
-	printf("\n\nUnsorted: \n");
-	for (i=0;i<NUM_ELEMENTS;i++){
-		A[i] = rand()/divisor;
-		// Variemai na psaksw na kanw tin drand48/srand48 na doulepsei sta windows
-		//A[i] = drand48() * 100;
-		printf(" %f ",A[i]);
+	if (argc == 3){
+		// First argument is the size of the list, second is the number of threads
+		num_elem = atoi(argv[1]);
+		num_thr = atoi(argv[2]);
+	}else{
+		printf("\nNo arguments given, continuing with default values: NUM_ELEMENTS 10000 NUM_THREADS 4\n");
 	}
 
-	pquicksort(A,NUM_ELEMENTS,NUM_THREADS);
+	A = malloc(num_elem * sizeof(double));
+	srand48((unsigned int)time(NULL));
 
-	printf("\n\nSorted: \n");
-	for (i=0;i<NUM_ELEMENTS;i++){
-			printf(" %f ",A[i]);
-		}
-	printf("\n");
-	return 0;
+	for (i=0;i<num_elem;i++){
+		A[i] = drand48() * 100;
+	}
+
+	start_time = clock();
+	pquicksort(A,num_elem,num_thr);
+	end_time = clock();
+
+	if (!isSorted(A, num_elem)){
+		printf("\nList did not get sorted dummy!\n");
+	}else{
+		printf("\nEverything went great, the list is sorted!\n");
+	}
+
+	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
+
+	free(A);
+	//pthread_mutex_destroy (&mutex);
+	pthread_exit(NULL);
 }
