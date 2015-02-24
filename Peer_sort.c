@@ -21,11 +21,16 @@ int partition(double a[], int left, int right){
 	int i, j;
 	double pivot,temp;
 
+	// Initialize the pivot to the first element
 	pivot = a[left];
 	i = left;
 	j = right+1;
 
 	while( 1){
+		/* Standard implementation of quicksort: Have 2 indexes, one at the start of list and one at the end.
+		 * Move the left one to the right until you find an element bigger than the pivot. Move the right one
+		 * to the left until you find an element smaller than the pivot. Swap these 2 elements. If the 2 indexes
+		 * intersect, break the loop.*/
 		do ++i; while(a[i] <= pivot && i <= right);
 	   	do --j; while(a[j] > pivot);
 	   	if( i >= j ){
@@ -71,17 +76,21 @@ void *helpQuicksort(void *arg){
 	for (i=0; i<num_thr; i++){
 		// Even phase
 		if (i % 2 == 0){
-			// Get every thread with odd id to merge their chunk with their left neighbor's chunk and sort them
+			/* Get every thread with odd id to merge their chunk with their left neighbor's chunk and sort them.
+			 * Since this is a pthreads implementation, we don't need to follow the exact algorithm - the memory
+			 * and the array are shared between processes so we don't actually need to send any blocks to neighboring
+			 * processes, we just sort each merged block.*/
 			if (mydata->id % 2 != 0){
 				quicksort(mydata->A,mydata->left - chunk,mydata->right);
 			}
 		}else{ // Odd phase
 			/* Get every thread with odd id to merge their chunk with their right neighbor's chunk and sort them.
-			 * The last thread with odd id does nothing because it doesn't have a right neighbor*/
+			 * The last thread with odd id does nothing because it doesn't have a neighbor on its right*/
 			if ((mydata->id % 2 != 0) && (num_thr - mydata->id != 1)){
 				quicksort(mydata->A,mydata->left,mydata->right + chunk);
 			}
 		}
+		// Wait for every pair to finish their merging/sorting.
 		pthread_barrier_wait (&barrier1);
 	}
 }
@@ -97,7 +106,7 @@ void pquicksort(double a[]){
 	int t;
 	struct thread_data mydata[num_thr];
 
-	//Set left and right for all threads
+	// Set left and right boundaries for all threads and create them
 	for (t=0; t<num_thr; t++){
 		mydata[t].A = a;
 		mydata[t].left = t*chunk;
@@ -142,28 +151,33 @@ int main(int argc, char *argv[]) {
 		printf("\nNo arguments given, continuing with default values: NUM_ELEMENTS 10000 NUM_THREADS 4\n");
 	}
 
-	//Size of elements for each thread
+	// Size of elements for each thread
 	chunk = num_elem/num_thr;
 
 	A = malloc(num_elem * sizeof(double));
 	srand48((unsigned int)time(NULL));
 
+	// Initialize the list with random values
 	for (i=0;i<num_elem;i++){
 		A[i] = drand48() * 100;
 	}
 
+	// Do the sorting and measure the time it took to completion
 	start_time = clock();
 	pquicksort(A);
 	end_time = clock();
 
+	// Check to see if the list was sorted correctly
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
 	}else{
 		printf("\nEverything went great, the list is sorted!\n");
 	}
 
+	// Print the processing time
 	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
 
 	free(A);
+	pthread_barrier_destroy(&barrier1);
 	pthread_exit(NULL);
 }

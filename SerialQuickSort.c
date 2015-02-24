@@ -1,26 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#define NUM_ELEMENTS 10
-
-void xorSwap (int *x, int *y) {
-     if (x != y) {
-         *x ^= *y;
-         *y ^= *x;
-         *x ^= *y;
-     }
- }
+#define NUM_ELEMENTS 10000
 
 int partition(double a[], int left, int right){
 
 	int i, j;
 	double pivot,temp;
 
+	// Initialize the pivot to the first element
 	pivot = a[left];
 	i = left;
 	j = right+1;
 
 	while( 1){
+		/* Standard implementation of quicksort: Have 2 indexes, one at the start of list and one at the end.
+		 * Move the left one to the right until you find an element bigger than the pivot. Move the right one
+		 * to the left until you find an element smaller than the pivot. Swap these 2 elements. If the 2 indexes
+		 * intersect, break the loop.*/
 		do ++i; while(a[i] <= pivot && i <= right);
 	   	do --j; while(a[j] > pivot);
 	   	if( i >= j ){
@@ -31,8 +28,6 @@ int partition(double a[], int left, int right){
 	   	a[j] = temp;
 	}
 
-	//Mporeis na dokimaseis na xrhsimopoihseis
-	//thn xorSwap poy evala :P malakizomai
 	temp = a[left];
 	a[left] = a[j];
 	a[j] = temp;
@@ -74,32 +69,31 @@ int main(int argc, char *argv[]) {
 	if (argc == 2){
 		// Argument is the size of the list
 		num_elem = atoi(argv[1]);
+	}else{
+		printf("\nNo arguments given, continuing with default value: NUM_ELEMENTS 10000\n");
 	}
 
 	A = malloc(num_elem * sizeof(double));
 	srand48((unsigned int)time(NULL));
 
-	//printf("\n\nUnsorted: ");
+	// Initialize the list with random values
 	for (i=0;i<num_elem;i++){
 		A[i] = drand48() * 100;
-		//printf(" %f ",A[i]);
 	}
 
+	// Do the sorting and measure the time it took to completion
 	start_time = clock();
 	quicksort(A,0,num_elem-1);
 	end_time = clock();
 
-	/*printf("\n\nSorted: ");
-	for (i=0;i<NUM_ELEMENTS;i++){
-			printf(" %f ",A[i]);
-	}*/
-
+	// Check to see if the list was sorted correctly
 	if (!isSorted(A, num_elem)){
 		printf("\nList did not get sorted dummy!\n");
 	}else{
 		printf("\nEverything went great, the list is sorted, you're a genius!\n");
 	}
 
+	// Print the processing time
 	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
 
 	return 0;
