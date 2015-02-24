@@ -77,10 +77,9 @@ int main(int argc, char *argv[]) {
 
 	num_elem = NUM_ELEMENTS;
 
-	if (argc == 3){
-		// First argument is the size of the list, second is the number of threads
+	if (argc == 2){
+		// Argument is the size of the list
 		num_elem = atoi(argv[1]);
-		num_thr = atoi(argv[2]);
 	}else{
 		printf("\nNo arguments given, continuing with default value: NUM_ELEMENTS 10000\n");
 	}
