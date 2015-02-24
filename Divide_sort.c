@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
-
+#include <sys/time.h>
 #define NUM_ELEMENTS 10000
 #define NUM_THREADS 4
 
@@ -14,6 +14,16 @@ struct thread_data{
 	int left;
 	int right;
 };
+
+//Function to measure the real execution time (Wall time)
+double get_wall_time(){
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        //  Handle error
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 int partition(double a[], int left, int right){
 
@@ -147,7 +157,7 @@ int main(int argc, char *argv[]) {
 
 	int i,num_elem;
 	double *A;
-	clock_t start_time,end_time;
+	double start_time,end_time;
 
 	num_elem = NUM_ELEMENTS;
 	num_thr = NUM_THREADS;
@@ -169,9 +179,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Do the sorting and measure the time it took to completion
-	start_time = clock();
+	start_time = get_wall_time();
 	pquicksort(A,num_elem);
-	end_time = clock();
+	end_time = get_wall_time();
 
 	// Check to see if the list was sorted correctly
 	if (!isSorted(A, num_elem)){
@@ -181,7 +191,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Print the processing time
-	printf("Processing time: %f s\n\n", (end_time-start_time)/(double)CLOCKS_PER_SEC );
+	printf("Processing (Wall) time: %f s\n\n", (end_time-start_time) );
 
 	free(A);
 	pthread_mutex_destroy (&mutex);
