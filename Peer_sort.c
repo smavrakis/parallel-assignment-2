@@ -26,6 +26,50 @@ double get_wall_time(){
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
+void merge(double a[], double b[], int left1, int right1, int left2, int right2){
+
+	int i, j, k;
+	j = left1;
+	k = left2;
+
+	/* We have 2 virtual sorted arrays (in essence, only 1 array divided into two parts).
+	 * Compare each pair of elements in the arrays and put the smallest one in the temp array b,
+	 * whose size is the sum of the other 2 arrays' size. The goal is to merge the 2 arrays
+	 * into 1 but keep them sorted.*/
+	for (i = 0; i < 2*chunk;){
+		if (j <= right1 && k <= right2){
+			if (a[j] < a[k]){
+				b[i] = a[j];
+				j++;
+			}else{
+				b[i] = a[k];
+				k++;
+			}
+			i++;
+		}else if (j > right1){
+			for (; i < 2*chunk;){
+				b[i] = a[k];
+				k++;
+				i++;
+			}
+		}else{
+			for (; i < 2*chunk;){
+				b[i] = a[j];
+				j++;
+				i++;
+			}
+		}
+	}
+
+	j = 0;
+
+	/* Finally, replace the input array with the temp array's sorted elements.*/
+	for (i = left1; i <= right2; i++){
+		a[i] = b[j];
+		j++;
+	}
+}
+
 int partition(double a[], int left, int right){
 
 	int i, j;
@@ -75,6 +119,9 @@ void *helpQuicksort(void *arg){
 	int pivot,i,j;
 	struct thread_data *mydata;
 	mydata = (struct thread_data *) arg;
+	double *B;
+
+	B = malloc(2*chunk * sizeof(double));
 
 
 	quicksort(mydata->A,mydata->left,mydata->right);
@@ -86,18 +133,18 @@ void *helpQuicksort(void *arg){
 	for (i=0; i<num_thr; i++){
 		// Even phase
 		if (i % 2 == 0){
-			/* Get every thread with odd id to merge their chunk with their left neighbor's chunk and sort them.
+			/* Get every thread with odd id to merge their chunk with their left neighbor's chunk and keep them sorted.
 			 * Since this is a pthreads implementation, we don't need to follow the exact algorithm - the memory
 			 * and the array are shared between processes so we don't actually need to send any blocks to neighboring
 			 * processes, we just sort each merged block.*/
 			if (mydata->id % 2 != 0){
-				quicksort(mydata->A,mydata->left - chunk,mydata->right);
+				merge(mydata->A,B,mydata->left - chunk,mydata->left - 1,mydata->left,mydata->right);
 			}
 		}else{ // Odd phase
-			/* Get every thread with odd id to merge their chunk with their right neighbor's chunk and sort them.
+			/* Get every thread with odd id to merge their chunk with their right neighbor's chunk and keep them sorted.
 			 * The last thread with odd id does nothing because it doesn't have a neighbor on its right*/
 			if ((mydata->id % 2 != 0) && (num_thr - mydata->id != 1)){
-				quicksort(mydata->A,mydata->left,mydata->right + chunk);
+				merge(mydata->A,B,mydata->left,mydata->right,mydata->right + 1,mydata->right + chunk);
 			}
 		}
 		// Wait for every pair to finish their merging/sorting.
