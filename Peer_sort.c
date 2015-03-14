@@ -150,6 +150,8 @@ void *helpQuicksort(void *arg){
 		// Wait for every pair to finish their merging/sorting.
 		pthread_barrier_wait (&barrier1);
 	}
+
+	free(B);
 }
 
 void pquicksort(double a[]){
